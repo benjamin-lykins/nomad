@@ -1,113 +1,87 @@
+terraform {
+  # Required version of Terraform, due to cross variable validation.
+  # https://www.hashicorp.com/blog/terraform-1-9-enhances-input-variable-validations
+  required_version = ">= 1.9"
 
-
-/*
-This is mainly an example of some dependencies that you might need to create in order to use the AWS EBS CSI driver with Nomad.
-
-This presumes you already have an existing Nomad cluster deployed in AWS. 
-
-The following resources are created in this example- 
-AWS:
-- An IAM instance profile for Nomad servers and clients
-- An IAM role for Nomad servers and clients
-- An IAM role policy for auto-discovering Nomad instances (this is carry over from another example, but useful if you do not have an existing cluster and want to use the auto)
-- An IAM role policy for mounting EBS volumes
-- An AWS EBS volume for use with the AWS EBS CSI driver
-
-Nomad:
-- A Nomad job file for the AWS EBS CSI controller plugin (output to storage/job/plugin-ebs-controller.nomad.hcl)
-- A Nomad job file for the AWS EBS CSI node plugin (output to storage/job/plugin-ebs-nodes.nomad.hcl)
-- A Nomad volume registration file for the EBS volume (output to storage/volume/ebs-volume.nomad.hcl)
-
-*/
-
-variable "name" {
-  type        = string
-  description = "Name of the Nomad related resources."
-}
-
-variable "aws_availability_zone" {
-  type        = string
-  description = "Availability zone of Nomad Cluster, e.g. us-west-2a."
-}
-
-locals {
-  tags = {
-    Name      = var.name
-    demo      = "aws-ebs-csi"
-    terrafrom = true
-  }
-}
-
-
-# Creates an IAM instance profile for Nomad with a name prefix derived from the variable `name`.
-# The instance profile is associated with the IAM role specified by `aws_iam_role.nomad.name`.
-# Tags for the instance profile are defined in the `local.tags` variable.
-resource "aws_iam_instance_profile" "nomad" {
-  name_prefix = "${var.name}-"
-  role        = aws_iam_role.nomad.name
-  tags        = local.tags
-}
-
-# Creates an AWS IAM role for Nomad with a specified name prefix, assume role policy, and tags.
-# 
-# Arguments:
-# - name_prefix: A prefix for the name of the IAM role, derived from the variable `var.name`.
-# - assume_role_policy: The assume role policy document for the IAM role, sourced from the data resource `data.aws_iam_policy_document.nomad.json`.
-# - tags: A map of tags to assign to the IAM role, sourced from the local variable `local.tags`.
-resource "aws_iam_role" "nomad" {
-  name_prefix        = "${var.name}-"
-  assume_role_policy = data.aws_iam_policy_document.nomad.json
-  tags               = local.tags
-}
-
-# This data block defines an IAM policy document for Nomad.
-# The policy grants the "Allow" effect for the "sts:AssumeRole" action.
-# It specifies that the principal is a service with the identifier "ec2.amazonaws.com".
-data "aws_iam_policy_document" "nomad" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
     }
   }
 }
 
-# This resource creates an IAM role policy for auto-discovering Nomad instances for a cluster.
-# The policy name is dynamically generated using the provided variable 'name'.
-# The policy is attached to the IAM role identified by 'aws_iam_role.nomad.id'.
-# The policy document is sourced from the data resource 'data.aws_iam_policy_document.auto_discover_cluster'.
-resource "aws_iam_role_policy" "auto_discover_cluster" {
-  name   = "${var.name}-auto-discover-cluster"
-  role   = aws_iam_role.nomad.id
-  policy = data.aws_iam_policy_document.auto_discover_cluster.json
+provider "aws" {
+  region = var.aws_region
 }
 
-# This data block defines an IAM policy document named "auto_discover_cluster".
-# The policy grants permissions to describe EC2 instances, EC2 tags, and Auto Scaling groups.
-# The permissions are granted to all resources ("*").
-data "aws_iam_policy_document" "auto_discover_cluster" {
-  statement {
-    effect = "Allow"
+variable "name" {
+  type        = string
+  description = "Name of the Nomad related resources."
+  default     = "aws-ebs-csi"
+}
 
-    actions = [
-      "ec2:DescribeInstances",
-      "ec2:DescribeTags",
-      "autoscaling:DescribeAutoScalingGroups",
-    ]
-    resources = ["*"]
+variable "add_iam_mount_policy" {
+  type        = bool
+  description = <<EOF
+  Toggling will add an IAM policy to an existing IAM role for Nomad to mount EBS volumes.
+  add_iam_mount_policy = true will also require the aws_iam_role variable to be set to an existing IAM role for Nomad.
+  EOF
+  default     = false
+}
+
+variable "aws_iam_role" {
+  type        = string
+  description = "IAM role for Nomad to add the IAM policy to mount EBS volumes."
+  validation {
+    condition     = var.add_iam_mount_policy && length(var.aws_iam_role) > 0
+    error_message = "IAM role must be a non-empty string."
   }
 }
 
-# This resource defines an IAM role policy named "mount-ebs-volumes".
-# It attaches the policy to the IAM role identified by aws_iam_role.nomad.id.
-# The policy document is sourced from the data.aws_iam_policy_document.mount_ebs_volumes resource.
+variable "aws_region" {
+  type        = string
+  description = "AWS region of Nomad Cluster, e.g. us-east-2."
+  default     = "us-east-2"
+}
+
+variable "aws_availability_zone" {
+  type        = string
+  description = "Availability zone of Nomad Cluster, e.g. us-east-2a."
+  default     = "us-east-2a"
+}
+
+locals {
+  tags = {
+    Name      = "aws-ebs-csi-demo"
+    terrafrom = true
+  }
+}
+
+# Fetches the IAM role information from AWS.
+# The data block is looks for a aws_iam_role on the value of `var.add_iam_mount_policy`.
+# If `var.add_iam_mount_policy` is true, the count is set to 1, utilizing the data block.
+# If `var.add_iam_mount_policy` is false, the count is set to 0, and the data block is not used.
+data "aws_iam_role" "nomad" {
+  count = var.add_iam_mount_policy ? 1 : 0
+  name  = var.aws_iam_role
+}
+
+
+# This resource defines an IAM role policy for mounting EBS volumes.
+# It is conditionally created based on the value of the `aws_iam_generation` variable.
+# If `aws_iam_generation` is true, the policy is created; otherwise, it is not.
+# The policy is named "mount-ebs-volumes" and is attached to the IAM role specified by the `one(data.aws_iam_role.nomad.*.id)` expression.
+# The policy document is defined by the `one(data.aws_iam_policy_document.*.mount_ebs_volumes.json)` expression.
 resource "aws_iam_role_policy" "mount_ebs_volumes" {
+  count  = var.add_iam_mount_policy ? 1 : 0
   name   = "mount-ebs-volumes"
-  role   = aws_iam_role.nomad.id
-  policy = data.aws_iam_policy_document.mount_ebs_volumes.json
+  role   = one(data.aws_iam_role.nomad.*.id)
+  policy = one(data.aws_iam_policy_document.mount_ebs_volumes.*.json)
 }
 
 # This data block defines an IAM policy document named "mount_ebs_volumes".
@@ -158,7 +132,7 @@ job "plugin-aws-ebs-controller" {
       driver = "docker"
 
       config {
-        image = "amazon/aws-ebs-csi-driver:v0.10.1"
+        image = "public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.38.1"
 
         args = [
           "controller",
@@ -200,7 +174,7 @@ job "plugin-aws-ebs-nodes" {
       driver = "docker"
 
       config {
-        image = "amazon/aws-ebs-csi-driver:v0.10.1"
+        image = "public.ecr.aws/ebs-csi-driver/aws-ebs-csi-driver:v1.38.1"
 
         args = [
           "node",
@@ -229,10 +203,8 @@ job "plugin-aws-ebs-nodes" {
 }
 
 EOF
-  filename = "${path.module}/storage/job/plugin-ebs-controller.nomad.hcl"
+  filename = "${path.module}/storage/job/plugin-ebs-nodes.nomad.hcl"
 }
-
-
 
 resource "local_file" "volume_registration" {
   content  = <<EOF
@@ -249,4 +221,23 @@ capability {
 }
 EOF
   filename = "${path.module}/storage/volume/ebs-volume.nomad.hcl"
+}
+
+
+output "nomad" {
+  value = <<EOF
+  Following commands need to be run to deploy the CSI driver and register the EBS volume:
+
+Run the controller job:
+  nomad job run ${local_file.controller.filename}
+
+Run the node job:
+  nomad job run ${local_file.nodes.filename}
+
+Register the volume:
+  nomad volume register ${local_file.volume_registration.filename}
+
+Check Status:
+  nomad job status plugin-aws-ebs-controller  
+  EOF
 }

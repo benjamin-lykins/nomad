@@ -1,0 +1,9 @@
+# Required variables
+aws_region           = "aws_region"
+aws_availability_zone = "aws_availability_zone"
+
+# Optional variables
+# Uncomment if needing and update for the IAM role policy. 
+
+# add_iam_mount_policy = true
+# aws_iam_role         = "aws_iam_role"
