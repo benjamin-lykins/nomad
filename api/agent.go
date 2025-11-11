@@ -299,6 +299,12 @@ func (a *Agent) Host(serverID, nodeID string, q *QueryOptions) (*HostDataRespons
 	return &resp, nil
 }
 
+// Sends a SIGHUP to the process running the agent.
+func (a *Agent) Reload() error {
+	_, err := a.client.put("/v1/config/reload", nil, nil, nil)
+	return err
+}
+
 // Monitor returns a channel which will receive streaming logs from the agent
 // Providing a non-nil stopCh can be used to close the connection and stop log streaming
 func (a *Agent) Monitor(stopCh <-chan struct{}, q *QueryOptions) (<-chan *StreamFrame, <-chan error) {

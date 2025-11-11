@@ -327,6 +327,11 @@ func Commands(metaPtr *Meta, agentUi cli.Ui) map[string]cli.CommandFactory {
 				Meta: meta,
 			}, nil
 		},
+		"config reload": func() (cli.Command, error) {
+			return &ConfigReloadCommand{
+				Meta: meta,
+			}, nil
+		},
 		"config validate": func() (cli.Command, error) {
 			return &ConfigValidateCommand{
 				Meta: meta,

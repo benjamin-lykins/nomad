@@ -11,9 +11,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/docker/docker/pkg/ioutils"
@@ -441,6 +443,32 @@ func (s *HTTPServer) AgentForceLeaveRequest(resp http.ResponseWriter, req *http.
 		err = srv.RemoveFailedNode(node)
 	}
 	return nil, err
+}
+
+// If acls are enabled, this endpoint requires agent=write permissions.
+// This endpoint sends SIGHUP to the local agent process to trigger a config reload.
+func (s *HTTPServer) ConfigReloadRequest(resp http.ResponseWriter, req *http.Request) (interface{}, error) {
+	if req.Method != http.MethodPut && req.Method != http.MethodPost {
+		return nil, CodedError(405, ErrInvalidMethod)
+	}
+
+	// ACL: require agent write
+	aclObj, err := s.ResolveToken(req)
+	if err != nil {
+		return nil, err
+	}
+	if !aclObj.AllowAgentWrite() {
+		return nil, structs.ErrPermissionDenied
+	}
+
+	// Send SIGHUP to current process to reuse existing reload logic
+	pid := os.Getpid()
+	if err := syscall.Kill(pid, syscall.SIGHUP); err != nil {
+		return nil, fmt.Errorf("failed to signal reload: %w", err)
+	}
+
+	// Respond with a simple acknowledgment
+	return map[string]string{"message": "reload signaled"}, nil
 }
 
 func (s *HTTPServer) AgentPprofRequest(resp http.ResponseWriter, req *http.Request) ([]byte, error) {
