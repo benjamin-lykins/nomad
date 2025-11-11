@@ -461,13 +461,13 @@ func (s *HTTPServer) ConfigReloadRequest(resp http.ResponseWriter, req *http.Req
 		return nil, structs.ErrPermissionDenied
 	}
 
-	// Send SIGHUP to current process to reuse existing reload logic
+	// Send SIGHUP to current process
 	pid := os.Getpid()
 	if err := syscall.Kill(pid, syscall.SIGHUP); err != nil {
 		return nil, fmt.Errorf("failed to signal reload: %w", err)
 	}
 
-	// Respond with a simple acknowledgment
+	// Returning that signal was sent.
 	return map[string]string{"message": "reload signaled"}, nil
 }
 

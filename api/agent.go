@@ -301,7 +301,7 @@ func (a *Agent) Host(serverID, nodeID string, q *QueryOptions) (*HostDataRespons
 
 // Sends a SIGHUP to the process running the agent.
 func (a *Agent) Reload() error {
-	_, err := a.client.put("/v1/config/reload", nil, nil, nil)
+	_, err := a.client.put("/v1/agent/reload", nil, nil, nil)
 	return err
 }
 

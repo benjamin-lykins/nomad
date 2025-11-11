@@ -464,9 +464,7 @@ func (s *HTTPServer) registerHandlers(enableDebug bool) {
 	s.mux.HandleFunc("/v1/agent/keyring/", s.wrap(s.KeyringOperationRequest))
 	s.mux.HandleFunc("/v1/agent/health", s.wrap(s.HealthRequest))
 	s.mux.HandleFunc("/v1/agent/host", s.wrap(s.AgentHostRequest))
-
-	// Config reload endpoint to trigger SIGHUP-like reload behavior
-	s.mux.HandleFunc("/v1/config/reload", s.wrap(s.ConfigReloadRequest))
+	s.mux.HandleFunc("/v1/agent/reload", s.wrap(s.ConfigReloadRequest))
 
 	// Register our service registration handlers.
 	s.mux.HandleFunc("/v1/services", s.wrap(s.ServiceRegistrationListRequest))
