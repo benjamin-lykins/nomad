@@ -13,7 +13,7 @@ type ConfigReloadCommand struct {
 
 func (c *ConfigReloadCommand) Help() string {
 	helpText := `
-Usage: nomad config reload [options]
+Usage: nomad agent reload [options]
 
   Trigger a Nomad agent configuration reload on the targeted agent.
   This has the same effect as sending SIGHUP to the agent process.

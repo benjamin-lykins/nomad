@@ -312,6 +312,11 @@ func Commands(metaPtr *Meta, agentUi cli.Ui) map[string]cli.CommandFactory {
 				ShutdownCh: make(chan struct{}),
 			}, nil
 		},
+		"agent reload": func() (cli.Command, error) {
+			return &ConfigReloadCommand{
+				Meta: meta,
+			}, nil
+		},
 		"agent-info": func() (cli.Command, error) {
 			return &AgentInfoCommand{
 				Meta: meta,
@@ -327,11 +332,7 @@ func Commands(metaPtr *Meta, agentUi cli.Ui) map[string]cli.CommandFactory {
 				Meta: meta,
 			}, nil
 		},
-		"config reload": func() (cli.Command, error) {
-			return &ConfigReloadCommand{
-				Meta: meta,
-			}, nil
-		},
+
 		"config validate": func() (cli.Command, error) {
 			return &ConfigValidateCommand{
 				Meta: meta,
