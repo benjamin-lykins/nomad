@@ -452,7 +452,6 @@ func (s *HTTPServer) ConfigReloadRequest(resp http.ResponseWriter, req *http.Req
 		return nil, CodedError(405, ErrInvalidMethod)
 	}
 
-	// ACL: require agent write
 	aclObj, err := s.ResolveToken(req)
 	if err != nil {
 		return nil, err
@@ -461,7 +460,8 @@ func (s *HTTPServer) ConfigReloadRequest(resp http.ResponseWriter, req *http.Req
 		return nil, structs.ErrPermissionDenied
 	}
 
-	// Send SIGHUP to current process
+	// Validate config
+
 	pid := os.Getpid()
 	if err := syscall.Kill(pid, syscall.SIGHUP); err != nil {
 		return nil, fmt.Errorf("failed to signal reload: %w", err)

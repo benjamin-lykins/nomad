@@ -248,17 +248,17 @@ changelog: ## Generate changelog from entries
 ## that do not successfully compile without rendering
 .PHONY: hclfmt
 hclfmt: ## Format HCL files with hclfmt
-	@echo "==> Formatting HCL"
-	@find . -name '.terraform' -prune \
-	        -o -name 'upstart.nomad' -prune \
-	        -o -name '.git' -prune \
-	        -o -name 'node_modules' -prune \
-	        -o -name '.next' -prune \
-	        -o -path './ui/dist' -prune \
-	        -o -path './website/out' -prune \
-	        -o -path './command/testdata' -prune \
-	        -o \( -name '*.nomad' -o -name '*.hcl' -o -name '*.tf' \) \
-	      -print0 | xargs -0 hclfmt -w
+# 	@echo "==> Formatting HCL"
+# 	@find . -name '.terraform' -prune \
+# 	        -o -name 'upstart.nomad' -prune \
+# 	        -o -name '.git' -prune \
+# 	        -o -name 'node_modules' -prune \
+# 	        -o -name '.next' -prune \
+# 	        -o -path './ui/dist' -prune \
+# 	        -o -path './website/out' -prune \
+# 	        -o -path './command/testdata' -prune \
+# 	        -o \( -name '*.nomad' -o -name '*.hcl' -o -name '*.tf' \) \
+# 	      -print0 | xargs -0 hclfmt -w
 
 .PHONY: tidy
 tidy: ## Tidy up the go mod files
