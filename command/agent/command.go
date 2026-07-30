@@ -1504,6 +1504,9 @@ Usage: nomad agent [options]
   Starts the Nomad agent and runs until an interrupt is received.
   The agent may be a client and/or server.
 
+  Use "nomad agent reload" to trigger a configuration reload via the
+  API (equivalent to sending SIGHUP to a running agent).
+
   The Nomad agent's configuration primarily comes from the config
   files used, but a subset of the options may also be passed directly
   as CLI arguments, listed below.

@@ -8,6 +8,7 @@ SECURITY:
 
 IMPROVEMENTS:
 
+* cli: Added 'agent reload' command to trigger agent configuration reload via the API
 * cli: Add a `-kv-path` flag to `nomad setup vault` to configure the Vault KV mount used by the generated workload policy [[GH-28183](https://github.com/hashicorp/nomad/issues/28183)]
 * cli: Added `-json` and `-t` options to the `operator autopilot get-config` command. [[GH-27991](https://github.com/hashicorp/nomad/issues/27991)]
 * client: Add tunable for Vault default lease duration on templates for paths without leases. [[GH-28199](https://github.com/hashicorp/nomad/issues/28199)]
