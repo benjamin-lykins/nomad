@@ -312,6 +312,9 @@ func Commands(metaPtr *Meta, agentUi cli.Ui) map[string]cli.CommandFactory {
 				ShutdownCh: make(chan struct{}),
 			}, nil
 		},
+		"agent reload": func() (cli.Command, error) {
+			return &AgentReloadCommand{Meta: meta}, nil
+		},
 		"agent-info": func() (cli.Command, error) {
 			return &AgentInfoCommand{
 				Meta: meta,
